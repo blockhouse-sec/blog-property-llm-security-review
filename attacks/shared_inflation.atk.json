@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "id": "shared_inflation",
+  "attacks": [
+    {
+      "id": "exchange_rate_manipulation",
+      "text": "Through a series of transactions, an attacker can shift the exchange rate between the underlying token and a pool share — with no accounted mint, burn or yield accrual explaining the shift — and take more of the underlying token out of the pool than their position is worth. The other holders cover the difference."
+    }
+  ]
+}

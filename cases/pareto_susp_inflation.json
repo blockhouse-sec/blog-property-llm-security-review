@@ -1,0 +1,30 @@
+{
+  "id": "pareto_susp_inflation",
+  "title": "Pareto sUSP — donation inflates the ERC4626 share price of the staking vault",
+
+  "repo_url": "https://github.com/pareto-credit/USP",
+  "repo_dir": "targets/pareto-USP",
+
+  "vuln_commit": "ea295f0a712ac23eb02308f05d8891850db938af",
+  "fix_commit": "",
+
+  "hints_file": "hints/pareto_susp_inflation.hints.json",
+  "invariants_file": "invariants/shared_inflation.inv.json",
+  "attacks_file": "attacks/shared_inflation.atk.json",
+
+  "ground_truth": {
+    "category": "business-logic",
+    "severity": "medium",
+    "files": ["src/ParetoDollarStaking.sol"],
+    "functions": ["totalAssets", "_deposit", "depositRewards"],
+    "line_ranges": [[141, 149], [182, 205], [84, 110]],
+    "description": "ParetoDollarStaking (sUSP) is an OpenZeppelin ERC4626Upgradeable vault over ParetoDollar (USP) whose share price is read off a balance it does not control: totalAssets() returns super.totalAssets() — the vault's own USP balance — minus the unvested portion of rewards, and OpenZeppelin's conversion then mints shares = assets * totalSupply / totalAssets rounded down. USP transferred directly to the vault therefore raises the assets backing existing shares without minting any, and depositRewards() does the same for yield pushed in by the queue contract. Starting from a minimal position — an attacker deposits 1 wei of USP for 1 wei of sUSP — a large direct transfer inflates assets per share so far that the next depositor's conversion rounds down, in the limit to zero: their USP is absorbed into totalAssets and becomes redeemable by the attacker's single share. Nothing bounds the manipulation, because the vault leaves _decimalsOffset() at the default 0, requires no minimum initial liquidity and seeds no dead shares at initialize(); the same shape hurts honest users if depositRewards() lands while the vault is still nearly empty. Reported as issue #16 (medium) of the April 2025 Sherlock Pareto contest."
+  },
+
+  "references": [
+    "https://github.com/sherlock-audit/2025-04-pareto-contest-judging/issues/16",
+    "https://github.com/sherlock-audit/2025-04-pareto-contest-judging/issues/72",
+    "https://github.com/sherlock-audit/2025-04-pareto-contest-judging/issues/119",
+    "https://github.com/sherlock-audit/2025-04-pareto-contest"
+  ]
+}

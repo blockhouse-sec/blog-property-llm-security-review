@@ -1,0 +1,34 @@
+{
+  "id": "napier_lst_inflation",
+  "title": "Napier BaseLSTAdapter — donation inflates the LST vault's share price",
+
+  "repo_url": "https://github.com/sherlock-audit/2024-01-napier",
+  "repo_dir": "targets/napier-2024-01",
+
+  "vuln_commit": "6313f34110b0d12677b389f0ecb3197038211e12",
+  "fix_commit": "",
+
+  "hints_file": "hints/napier_lst_inflation.hints.json",
+  "invariants_file": "invariants/shared_inflation.inv.json",
+  "attacks_file": "attacks/shared_inflation.atk.json",
+
+  "ground_truth": {
+    "category": "business-logic",
+    "severity": "high",
+    "files": [
+      "napier-v1/src/adapters/BaseLSTAdapter.sol",
+      "napier-v1/src/adapters/lido/StEtherAdapter.sol"
+    ],
+    "functions": ["prefundedDeposit", "totalAssets"],
+    "line_ranges": [[75, 78], [114, 117], [71, 139]],
+    "description": "BaseLSTAdapter is the ERC4626 vault behind each Napier liquid-staking-token adapter, and it mints shares against assets it measures rather than assets it was given. prefundedDeposit() takes assets as the WETH balance above the recorded buffer, converts with previewDeposit(), and the concrete adapters define totalAssets() from an on-chain balance — StEtherAdapter returns withdrawalQueueEth + bufferEth + STETH.balanceOf(address(this)) — so staked tokens sent directly to the adapter raise the assets backing existing shares without minting any. The contract does not override _decimalsOffset(), which leaves it at 0 and removes the virtual-share cushion, and it enforces no minimum liquidity, so an attacker can take the vault to a dust share supply (mint x shares, burn x-1), donate a large stETH balance, and inflate the price per share arbitrarily. The one guard, `if (shares == 0) revert ZeroShares();`, rejects a deposit that rounds away entirely but not one that rounds down to a handful of shares, so a subsequent depositor is credited too few shares and the shortfall stays with the attacker's dust position, redeemable on exit. prefundedDeposit() is also unrestricted at this commit — any caller, not only the Tranche, can drive it — which is what lets an attacker interleave with a victim's deposit. Reported as issues #94 and #125 (high) of the January 2024 Sherlock Napier contest."
+  },
+
+  "references": [
+    "https://github.com/sherlock-audit/2024-01-napier-judging/issues/94",
+    "https://github.com/sherlock-audit/2024-01-napier-judging/issues/125",
+    "https://github.com/sherlock-audit/2024-01-napier/blob/6313f34110b0d12677b389f0ecb3197038211e12/napier-v1/src/adapters/BaseLSTAdapter.sol#L71",
+    "https://github.com/sherlock-audit/2024-05-napier-update",
+    "https://audits.sherlock.xyz/contests/171"
+  ]
+}

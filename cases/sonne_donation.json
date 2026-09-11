@@ -1,0 +1,31 @@
+{
+  "id": "sonne_donation",
+  "title": "Sonne Finance — donation into an empty market inflates the soToken exchange rate",
+
+  "repo_url": "https://github.com/sonne-finance/lending-protocol",
+  "repo_dir": "targets/sonne-lending-protocol",
+
+  "vuln_commit": "003c2ea",
+  "fix_commit": "",
+
+  "hints_file": "hints/sonne_donation.hints.json",
+  "invariants_file": "invariants/shared_inflation.inv.json",
+  "attacks_file": "attacks/shared_inflation.atk.json",
+
+  "ground_truth": {
+    "category": "business-logic",
+    "severity": "critical",
+    "files": ["contracts/CToken.sol"],
+    "functions": ["exchangeRateStoredInternal", "mintFresh", "redeemFresh"],
+    "line_ranges": [[382, 409], [521, 575], [609, 693]],
+    "description": "Sonne Finance, a Compound V2 fork, was exploited on Optimism on 14 May 2024 for roughly $20M because a market's share price is derived from the balance the contract happens to hold rather than from what was deposited. exchangeRateStoredInternal() computes (getCashPrior() + totalBorrows - totalReserves) / totalSupply, so underlying tokens transferred directly to the market raise totalCash without minting any shares and inflate the exchange rate; mintFresh() and redeemFresh() then divide by that rate with truncating integer division (mintTokens = actualMintAmount / exchangeRate, redeemTokens = redeemAmountIn / exchangeRate), so the rounded-away remainder is left behind for whoever already holds shares. A newly listed soVELO market was created and configured in separate timelocked, permissionlessly executable transactions, which left a window in which the market existed with an essentially empty supply. The attacker minted a dust soVELO position, donated a flash-loaned ~35.5M VELO straight to the soVELO contract, and drove the exchange rate high enough that 1 wei of soVELO carried millions of tokens of collateral value — enough to borrow roughly 265 WETH against it. Repeating the borrow across the Optimism markets and then redeeming the dust position to recover the donation drained about $20M in WETH, USDC.e and VELO."
+  },
+
+  "references": [
+    "https://blog.verichains.io/p/compound-v2-forked-vulnerability",
+    "https://medium.com/@SonneFinance/post-mortem-sonne-finance-exploit-12f3daa82b06",
+    "https://www.certik.com/blog/sonne-finance-incident-analysis",
+    "https://www.quillaudits.com/blog/hack-analysis/sonne-finance-hack",
+    "https://www.halborn.com/blog/post/explained-the-sonne-finance-hack-may-2024"
+  ]
+}
